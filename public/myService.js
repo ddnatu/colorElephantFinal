@@ -84,7 +84,7 @@ app.service('MyService', function ($http) {
         return $http(reqadminVerifyRegister);
     }
 
-    this.adminLogsIn = function(){
+    this.adminLogsIn = function(adminCredentialsObject){
         reqadminLogsIn.data = adminCredentialsObject;
         console.log('reqadminLogsin', reqadminLogsIn);
         return $http(reqadminLogsIn);
