@@ -4,7 +4,7 @@ var app = angular.module('myApp', ["ngRoute"]);
     $routeProvider
         .when('/', {
             templateUrl: 'user.html',
-            controller: 'myCtrl'  
+            controller: 'userController'  
         })
         .when('/admin', {
             templateUrl: 'admin.html',
@@ -23,10 +23,10 @@ var app = angular.module('myApp', ["ngRoute"]);
             templateUrl: 'register.html',
             controller: 'registerController'
         })
-        .when('/user', {
-            templateUrl: 'user.html',
-            controller: 'userController'
-        });
+        .when('/register', {
+            templateUrl: 'profile.html',
+            controller: 'profileController'
+        })
 
         // configure html5 to get links working on jsfiddle
         $locationProvider.html5Mode({
@@ -57,7 +57,7 @@ var app = angular.module('myApp', ["ngRoute"]);
         }
         $scope.adminLogsIn   = function(){
             console.log('adming Logs In', $scope.adminUser);
-            var adminLoginDefer = MyService.adminLogsIn();
+            var adminLoginDefer = MyService.adminLogsIn($scope.adminUser);
             adminLoginDefer.then(function(data){
                 console.log('adminLoginSuccess', data);
             },function(error){
@@ -65,10 +65,57 @@ var app = angular.module('myApp', ["ngRoute"]);
             });
         }
     });
-    app.controller('userController', function($scope, $routeParams) {
-        $scope.name = 'userController';
-        $scope.params = $routeParams;
-        console.log('user Controller');
+    app.controller('userController', function($scope, $routeParams, MyService) {
+        $scope.automaticCaptchaCode = 7777;
+        $scope.enteredCaptchaCode;
+        var val = Math.floor(1000 + Math.random() * 9000);
+        $scope.automaticCaptchaCode = val;
+        $scope.master = {};
+        $scope.update = function(user) {
+            $scope.master = angular.copy(user);
+            var userSubFormDefer = MyService.userSubmitsForm($scope.master);
+            userSubFormDefer.then(function(data){
+                console.log('successSubmitForm', data);
+            },function(error){
+                console.log('errorSubmitForm', error);
+            })
+        };
+        $scope.reset = function(form) {
+            if (form) {
+                form.$setPristine();
+                form.$setUntouched();
+            }
+            $scope.user = angular.copy($scope.master);
+        };
+        $scope.setFiles = function(element) {
+            $scope.$apply(function($scope) {
+                console.log('files:', element.files);
+                // Turn the FileList object into an Array
+                    $scope.files = []
+                    for (var i = 0; i < element.files.length; i++) {
+                        $scope.files.push(element.files[i]);
+                    }
+                $scope.progressVisible = false;
+            });
+        };
+        $scope.saveFile = function(){
+            var uploadDefer = MyService.uploadAttachment($scope.files[0]);
+            uploadDefer.then(function(data){
+                console.log('data', data);
+            }, function(error){
+                console.log('file upload error', error);
+            });
+        }
+        $scope.reset();
+        $scope.checkIfDuplicate = function(testEmail){
+            console.log(testEmail);
+            var checkIfDuplicateDefer = MyService.checkIfDuplicate(testEmail);
+            checkIfDuplicateDefer.then(function(data){
+                console.log('checkIfDuplicateResult', data);
+            }, function(error){
+                console.log('Duplicate eMail Service error', error);
+            });
+        }
     });
     app.controller('registerController', function($scope, $routeParams, MyService) {
         $scope.name = 'registerController';
@@ -78,7 +125,20 @@ var app = angular.module('myApp', ["ngRoute"]);
         var registerVerifyDefer = MyService.verifyRegistration($scope.params.time);
         registerVerifyDefer.then(function(data){
             console.log('reg verify success', data);
-            window.location = "http://localhost:3000/";
+            window.location = "http://localhost:3000/profile";
+            
+        },function(error){
+            console.log(error);
+        })
+    });
+    app.controller('profileController', function($scope, $routeParams, MyService) {
+        $scope.name = 'profileController';
+        $scope.params = $routeParams;
+        // console.log('$scope.params', $scope.params.time);
+        // console.log('register Controller');
+        var getDetailsDefer = MyService.getDetails(email);
+        getDetailsDefer.then(function(data){
+            console.log('reg verify success', data);
             
         },function(error){
             console.log(error);
