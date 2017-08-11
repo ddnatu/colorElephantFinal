@@ -23,6 +23,8 @@ var path = require('path');
 
 //Setting up the static contents of a directory
 app.use('/', express.static(__dirname + '/public'));
+app.use('/', express.static(__dirname + '/public/css'));
+
 
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/public/index.html');
@@ -150,9 +152,9 @@ app.post('/registerAdmin', function (req, res) {
 
         var mailOptions = {
           from: 'dd.natu@gmail.com',
-          to: 'natudevdutta@gmail.com',
+          to: email,
           subject: 'Sending Email using Node.js, Please click on this link to complete your registration',
-          html: `<a href="http://localhost:3000/register?time=${userTime}">That was easy!`
+          html: `<a href="http://localhost:3000/register?time=${userTime}">Please click this link to finish registration!`
         };
 
         transporter.sendMail(mailOptions, function (error, info) {
@@ -203,29 +205,26 @@ app.post('/loginAdmin', function (req, res) {
   var email = req.body.email;
   var password = req.body.password;
   console.log("email address = " + email + ", password is " + password);
-
-  var check;
+  var query = "SELECT * FROM admin_info where email='" + email + "' And password='" + password +"'";
   db.serialize(function () {
-    // db.run("DROP TABLE db.admin_info");
-    db.run("CREATE TABLE if not exists admin_info (emailId TEXT, uName TEXT, pWord TEXT, PRIMARY KEY(emailId))");
-    // var stmt = db.prepare("INSERT INTO admin_info (uName,pWord) VALUES (" + user_name + "," + password + ")");
-    // var stmt = db.prepare("INSERT INTO admin_info (uName,pWord) VALUES (?,?)");
-    // stmt.run(user_name, email, password);
-    db.run("INSERT INTO admin_info (emailId,uName,pWord) VALUES ($emailId,$userId,$password)", {
-      $emailId: email,
-      $userId: user_name,
-      $password: password
-    });
-    // stmt.finalize();
-
-
-    db.each("SELECT * FROM admin_info", function (err, row) {
-      console.log(row);
+    db.all(query, function (err, rows) {
+      console.log('Query', query);
+      if (err) {
+        res.status(500).send({ "error": "Error while querying" });
+      }
+      else {
+        if (rows.length == 0) {
+          res.send({ "msg": "User does not exist" });
+        }
+        else {
+          res.send({ "msg": "User exists" });
+        }
+      }
     });
   });
+
   res.end("yes");
 });
-
 
 app.post('/saveUserForm', function (req, res) {
   console.log('req', req.body.name, req.body.email);
